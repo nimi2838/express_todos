@@ -1,0 +1,19 @@
+{
+  "name": "exam1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "express": "^4.18.1",
+    "mysql2": "^2.3.3",
+    "node-fetch": "^3.2.9"
+  },
+  "type": "module"
+}
