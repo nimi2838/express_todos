@@ -2,16 +2,17 @@
 import express from "express";
 import mysql from "mysql2/promise";
 import axios from "axios";
+import cors from 'cors';
 
 const app = express();
-
+app.use(cors())
 app.use(express.json());
 
-const port = 3000;
+const port = 4000;
 const pool = mysql.createPool({
   host: "localhost",
-  user: "sbsst",
-  password: "sbs123414",
+  user: "root",
+  password: "",
   database: "a9",
   waitForConnections: true,
   connectionLimit: 10,
@@ -19,16 +20,16 @@ const pool = mysql.createPool({
 });
 
 const getData = async () => {
-  const data = await axios.get("http://localhost:3000/todos");
+  const data = await axios.get("http://localhost:4000/todos");
   console.log("async await", data);
 };
 
 app.get("/todos/:id/:contentId", async (req, res) => {
-  // params 여러개 받기
+  // query 여러개 받기
   const data = {
     todos: {
-      id: req.params.id,
-      contentId: req.params.contentId,
+      id: req.query.id,
+      contentId: req.query.contentId,
     },
   };
 
@@ -42,13 +43,13 @@ app.get("/todos/:id/:contentId", async (req, res) => {
 app.get("/todos", async (req, res) => {
   const [rows] = await pool.query("SELECT * FROM todo ORDER BY id DESC");
 
-  getData();
+  //getData();
   res.json(rows);
 });
 
 app.get("/todos/:id/", async (req, res) => {
-  //const id = req.params.id;
-  const { id } = req.params;
+  //const id = req.query.id;
+  const { id } = req.query;
 
   const [rows] = await pool.query(
     `
@@ -68,9 +69,37 @@ app.get("/todos/:id/", async (req, res) => {
   res.json(rows[0]);
 });
 
+app.patch("/todos/check/:id", async (req, res) => {
+  const {id} = req.params;
+
+  const [[todoRow]] = await pool.query (
+    `
+    SELECT *
+    FROM todo
+    WHERE id = ?
+    `,
+    [id]
+  );
+  if (!todoRow) {
+    res.status(404).json({
+      msg: "not found",
+    });
+  }
+
+  await pool.query(
+    `
+    UPDATE todo
+    SET checked = ?
+    WHERE id = ? `, 
+    [!todoRow.checked, id]
+  );
+  res.send(id);
+
+});
+
 app.patch("/todos/:id", async (req, res) => {
   const { id } = req.params;
-  const { perform_date, content } = req.body;
+  const { perform_date, text } = req.body;
 
   const [rows] = await pool.query(
     `
@@ -94,26 +123,27 @@ app.patch("/todos/:id", async (req, res) => {
     return;
   }
 
-  if (!content) {
+  if (!text) {
     res.status(400).json({
-      msg: "content required",
+      msg: "text required",
     });
     return;
   }
 
-  const [rs] = await pool.query(
+
+  await pool.query(
     `
     UPDATE todo
     SET perform_date = ?,
-    content = ?
+    text = ?
     WHERE id = ?
     `,
-    [perform_date, content, id]
+    [perform_date, text, id]
   );
 
-  res.json({
-    msg: `${id}번 할일이 수정되었습니다.`,
-  });
+  // res.json({
+  //   msg: `${id}번 할일이 수정되었습니다.`,
+  // });
 });
 
 app.delete("/todos/:id", async (req, res) => {
@@ -143,13 +173,16 @@ app.delete("/todos/:id", async (req, res) => {
     msg: `${id}번 할일이 삭제되었습니다.`,
   });
 });
+
+
 app.post("/todos", async (req, res) => {
   const { reg_date } = req.body;
   const { perform_date } = req.body;
-  const { is_completed } = req.body;
-  const { content } = req.body;
+  const { checked } = req.body;
+  const { text } = req.body;
 
-  const [rows] = await pool.query(`SELECT * FROM todo`);
+  const [[rows]] = await pool.query(`SELECT * FROM todo`);
+
   if (rows.length === 0) {
     res.status(404).json({
       msg: "not found",
@@ -167,15 +200,15 @@ app.post("/todos", async (req, res) => {
     });
     return;
   }
-  if (!is_completed) {
+  if (!checked) {
     res.status(400).json({
-      msg: "is_completed required",
+      msg: "checked required",
     });
     return;
   }
-  if (!content) {
+  if (!text) {
     res.status(400).json({
-      msg: "content required",
+      msg: "text required",
     });
     return;
   }
@@ -184,10 +217,10 @@ app.post("/todos", async (req, res) => {
     INSERT todo SET
     reg_date = NOW(),
     perform_date = ? ,
-    is_completed = ?,
-    content = ? 
+    checked = ?,
+    text = ? 
     `,
-    [reg_date, perform_date, is_completed, content]
+    [reg_date, perform_date, checked, text]
   );
   res.json({
     msg: `할 일이 생성되었습니다.`,
