@@ -230,8 +230,6 @@ app.post('/todos', async (req, res) => {
   const [[rows]] = await pool.query(`
   SELECT *
   FROM todo
-  /* ORDER BY id
-  DESC LIMIT 1 */
   `)
   res.json(rows)
 })
