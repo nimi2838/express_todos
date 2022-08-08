@@ -228,7 +228,7 @@ app.post('/todos', async (req, res) => {
   `,
     [text]
   )
-  const [[rows]] = await pool.query(`
+  const [rows] = await pool.query(`
   SELECT *
   FROM todo
   `)
