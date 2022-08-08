@@ -217,6 +217,7 @@ app.post('/todos', async (req, res) => {
   const {
     body: { text },
   } = req
+  // const { text } = req.body
   await pool.query(
     `
   INSERT INTO todo
