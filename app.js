@@ -99,7 +99,7 @@ app.patch("/todos/check/:id", async (req, res) => {
 
 app.patch('/todos/:id', async (req, res) => {
   const { id } = req.params
-  const { perform_date, text } = req.body
+  const { text } = req.body
   const [rows] = await pool.query(
     `
     SELECT *
