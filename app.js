@@ -11,7 +11,7 @@ app.use(express.json());
 const port = 4000;
 const pool = mysql.createPool({
   host: "localhost",
-  user: "root",
+  user: "sbsst",
   password: "",
   database: "a9",
   waitForConnections: true,
@@ -41,7 +41,7 @@ app.get("/todos/:id/:contentId", async (req, res) => {
 });
 
 app.get("/todos", async (req, res) => {
-  const [rows] = await pool.query("SELECT * FROM todo ORDER BY id DESC");
+  const [rows] = await pool.query("SELECT * FROM todo");
 
   //getData();
   res.json(rows);
@@ -97,10 +97,9 @@ app.patch("/todos/check/:id", async (req, res) => {
 
 });
 
-app.patch("/todos/:id", async (req, res) => {
-  const { id } = req.params;
-  const { perform_date, text } = req.body;
-
+app.patch('/todos/:id', async (req, res) => {
+  const { id } = req.params
+  const { perform_date, text } = req.body
   const [rows] = await pool.query(
     `
     SELECT *
@@ -108,43 +107,30 @@ app.patch("/todos/:id", async (req, res) => {
     WHERE id = ?
     `,
     [id]
-  );
-
+  )
   if (rows.length === 0) {
     res.status(404).json({
-      msg: "not found",
-    });
+      msg: 'not found',
+    })
   }
-
-  if (!perform_date) {
-    res.status(400).json({
-      msg: "perform_date required",
-    });
-    return;
-  }
-
   if (!text) {
     res.status(400).json({
-      msg: "text required",
-    });
-    return;
+      msg: 'text required',
+    })
+    return
   }
-
-
-  await pool.query(
+  const [rs] = await pool.query(
     `
     UPDATE todo
-    SET perform_date = ?,
-    text = ?
+    SET text = ?
     WHERE id = ?
     `,
-    [perform_date, text, id]
-  );
-
-  // res.json({
-  //   msg: `${id}번 할일이 수정되었습니다.`,
-  // });
-});
+    [text, id]
+  )
+  res.json({
+    msg: `${id}번 할일이 수정되었습니다.`,
+  })
+})
 
 app.delete("/todos/:id", async (req, res) => {
   const { id } = req.params;
@@ -175,57 +161,81 @@ app.delete("/todos/:id", async (req, res) => {
 });
 
 
-app.post("/todos", async (req, res) => {
-  const { reg_date } = req.body;
-  const { perform_date } = req.body;
-  const { checked } = req.body;
-  const { text } = req.body;
+// app.post("/todos", async (req, res) => {
+//   const { reg_date } = req.body;
+//   const { perform_date } = req.body;
+//   const { checked } = req.body;
+//   const { text } = req.body;
 
-  const [[rows]] = await pool.query(`SELECT * FROM todo`);
+//   const [[rows]] = await pool.query(`SELECT * FROM todo`);
 
-  if (rows.length === 0) {
-    res.status(404).json({
-      msg: "not found",
-    });
-  }
-  if (!reg_date) {
-    res.status(400).json({
-      msg: "reg_date required",
-    });
-    return;
-  }
-  if (!perform_date) {
-    res.status(400).json({
-      msg: "perform_date required",
-    });
-    return;
-  }
-  if (!checked) {
-    res.status(400).json({
-      msg: "checked required",
-    });
-    return;
-  }
-  if (!text) {
-    res.status(400).json({
-      msg: "text required",
-    });
-    return;
-  }
-  const [rs] = await pool.query(
+//   if (rows.length === 0) {
+//     res.status(404).json({
+//       msg: "not found",
+//     });
+//   }
+//   if (!reg_date) {
+//     res.status(400).json({
+//       msg: "reg_date required",
+//     });
+//     return;
+//   }
+//   if (!perform_date) {
+//     res.status(400).json({
+//       msg: "perform_date required",
+//     });
+//     return;
+//   }
+//   if (!checked) {
+//     res.status(400).json({
+//       msg: "checked required",
+//     });
+//     return;
+//   }
+//   if (!text) {
+//     res.status(400).json({
+//       msg: "text required",
+//     });
+//     return;
+//   }
+//   const [rs] = await pool.query(
+//     `
+//     INSERT todo SET
+//     reg_date = NOW(),
+//     perform_date = ? ,
+//     checked = ?,
+//     text = ? 
+//     `,
+//     [reg_date, perform_date, checked, text]
+//   );
+//   res.json({
+//     msg: `할 일이 생성되었습니다.`,
+//   });
+// });
+
+app.post('/todos', async (req, res) => {
+  const {
+    body: { text },
+  } = req
+  await pool.query(
     `
-    INSERT todo SET
-    reg_date = NOW(),
-    perform_date = ? ,
-    checked = ?,
-    text = ? 
-    `,
-    [reg_date, perform_date, checked, text]
-  );
-  res.json({
-    msg: `할 일이 생성되었습니다.`,
-  });
-});
+  INSERT INTO todo
+  SET reg_date = NOW(),
+  perform_date = NOW(),
+  checked = 0,
+  text = ?;
+  `,
+    [text]
+  )
+  const [[rows]] = await pool.query(`
+  SELECT *
+  FROM todo
+  /* ORDER BY id
+  DESC LIMIT 1 */
+  `)
+  res.json(rows)
+})
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
